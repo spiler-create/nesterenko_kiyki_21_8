@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../models/student.dart';
+import '../models/department.dart';
 
 class NewStudent extends StatefulWidget {
   final Student? student;
@@ -31,7 +32,7 @@ class _NewStudentState extends State<NewStudent> {
     }
   }
 
-  void _saveStudent() {
+  void saveStudent() {
     if (_firstNameController.text.isEmpty ||
         _lastNameController.text.isEmpty ||
         _selectedDepartment == null ||
@@ -54,120 +55,153 @@ class _NewStudentState extends State<NewStudent> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => FocusScope.of(context).unfocus(),
-      child: Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'Додати/Редагувати студента',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: _firstNameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Ім’я',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: _lastNameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Прізвище',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                DropdownButtonFormField<Department>(
-                  value: _selectedDepartment,
-                  decoration: const InputDecoration(
-                    labelText: 'Факультет',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: Department.values.map((department) {
-                    return DropdownMenuItem(
-                      value: department,
-                      child: Row(
-                        children: [
-                          Icon(departmentIcons[department]!),
-                          const SizedBox(width: 8),
-                          Text(department.name),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                  onChanged: (value) => setState(() => _selectedDepartment = value),
-                ),
-                const SizedBox(height: 16),
-                DropdownButtonFormField<Gender>(
-                  value: _selectedGender,
-                  decoration: const InputDecoration(
-                    labelText: 'Стать',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: Gender.values.map((gender) {
-                    return DropdownMenuItem(
-                      value: gender,
-                      child: Text(gender.name),
-                    );
-                  }).toList(),
-                  onChanged: (value) => setState(() => _selectedGender = value),
-                ),
-                const SizedBox(height: 16),
-                Slider(
-                  value: _grade.toDouble(),
-                  min: 0,
-                  max: 100,
-                  divisions: 100,
-                  label: 'Оцінка: $_grade',
-                  onChanged: (value) => setState(() => _grade = value.toInt()),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    ElevatedButton.icon(
-                      onPressed: () => Navigator.of(context).pop(),
-                      icon: const Icon(Icons.cancel, color: Colors.black),
-                      label: const Text(
-                        'Відмінити',
-                        style: TextStyle(color: Colors.black),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                        backgroundColor: Colors.red.shade400,
-                        shadowColor: Colors.red.shade200,
-                        elevation: 5,
-                      ),
-                    ),
-                    ElevatedButton.icon(
-                      onPressed: _saveStudent,
-                      icon: const Icon(Icons.check_circle, color: Colors.black),
-                      label: Text(
-                        widget.student == null ? 'Додати' : 'Оновити',
-                        style: const TextStyle(color: Colors.black),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                        backgroundColor: Colors.green.shade500,
-                        shadowColor: Colors.green.shade300,
-                        elevation: 5,
-                      ),
-                    ),
-                  ],
-                ),
-
-              ],
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: SingleChildScrollView(
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.white, Colors.grey.shade200],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
+            borderRadius: BorderRadius.circular(15),
+          ),
+          margin: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Додати/Редагувати студента',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.teal,
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _firstNameController,
+                decoration: const InputDecoration(
+                  labelText: 'Ім’я',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.person),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _lastNameController,
+                decoration: const InputDecoration(
+                  labelText: 'Прізвище',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.person_outline),
+                ),
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<Department>(
+                value: _selectedDepartment,
+                decoration: const InputDecoration(
+                  labelText: 'Факультет',
+                  border: OutlineInputBorder(),
+                ),
+                items: departments.map((department) {
+                  return DropdownMenuItem(
+                    value: department,
+                    child: Row(
+                      children: [
+                        Icon(department.icon, size: 20),
+                        const SizedBox(width: 8),
+                        Text(department.name),
+                      ],
+                    ),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedDepartment = value;
+                  });
+                },
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<Gender>(
+                value: _selectedGender,
+                decoration: const InputDecoration(
+                  labelText: 'Стать',
+                  border: OutlineInputBorder(),
+                ),
+                items: Gender.values.map((gender) {
+                  return DropdownMenuItem(
+                    value: gender,
+                    child: Text(
+                      gender.toString().split('.').last.toUpperCase(),
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedGender = value;
+                  });
+                },
+              ),
+              const SizedBox(height: 16),
+              Slider(
+                value: _grade.toDouble(),
+                min: 0,
+                max: 100,
+                divisions: 100,
+                label: 'Оцінка: $_grade',
+                activeColor: Colors.teal,
+                onChanged: (value) {
+                  setState(() {
+                    _grade = value.toInt();
+                  });
+                },
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.cancel, color: Colors.black),
+                    label: const Text(
+                      'Відмінити',
+                      style: TextStyle(color: Colors.black),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red.shade400,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                    ),
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: saveStudent,
+                    icon: const Icon(Icons.save, color: Colors.black),
+                    label: const Text(
+                      'Зберегти',
+                      style: TextStyle(color: Colors.black),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.teal.shade400,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ),

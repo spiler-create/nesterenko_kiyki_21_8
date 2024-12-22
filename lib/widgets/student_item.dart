@@ -49,7 +49,7 @@ class StudentItem extends StatelessWidget {
             ),
             alignment: Alignment.center,
             child: Icon(
-              departmentIcons[student.department],
+              student.department.icon,
               size: 30,
               color: iconColor,
             ),
