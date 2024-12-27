@@ -10,7 +10,7 @@ class TabsScreen extends StatefulWidget {
 }
 
 class _TabsScreenState extends State<TabsScreen> {
-  int _selectedIndex = 0;
+  int internalIndex = 0;
 
   final List<Widget> _screens = [
     const DepartmentsScreen(),
@@ -22,9 +22,9 @@ class _TabsScreenState extends State<TabsScreen> {
     'Студенти',
   ];
 
-  void _onTabSelected(int index) {
+  void onTabSelected(int index) {
     setState(() {
-      _selectedIndex = index;
+      internalIndex = index;
     });
   }
 
@@ -33,7 +33,7 @@ class _TabsScreenState extends State<TabsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          _titles[_selectedIndex],
+          _titles[internalIndex],
           style: const TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
@@ -52,7 +52,7 @@ class _TabsScreenState extends State<TabsScreen> {
           ),
         ),
       ),
-      body: _screens[_selectedIndex],
+      body: _screens[internalIndex],
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -62,8 +62,8 @@ class _TabsScreenState extends State<TabsScreen> {
           ),
         ),
         child: BottomNavigationBar(
-          currentIndex: _selectedIndex,
-          onTap: _onTabSelected,
+          currentIndex: internalIndex,
+          onTap: onTabSelected,
           backgroundColor: Colors.transparent,
           elevation: 0,
           selectedItemColor: Colors.white,

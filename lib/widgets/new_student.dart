@@ -2,60 +2,77 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../models/student.dart';
 import '../models/department.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers/students_provider.dart';
 
-class NewStudent extends StatefulWidget {
-  final Student? student;
-  final Function(Student) onSave;
+class NewStudent extends ConsumerStatefulWidget {
+  const NewStudent({
+    super.key,
+    this.studentIndex
+  });
 
-  const NewStudent({super.key, this.student, required this.onSave});
+  final int? studentIndex;
 
   @override
-  State<NewStudent> createState() => _NewStudentState();
+  ConsumerState<ConsumerStatefulWidget> createState() => _NewStudentState();
 }
 
-class _NewStudentState extends State<NewStudent> {
-  final _firstNameController = TextEditingController();
-  final _lastNameController = TextEditingController();
-  Department? _selectedDepartment;
-  Gender? _selectedGender;
-  int _grade = 50;
+class _NewStudentState extends ConsumerState<NewStudent> {
+  final firstNameController = TextEditingController();
+  final lastNameController = TextEditingController();
+  Department? selectedDepartment;
+  Gender? selectedGender;
+  int grade = 50;
 
   @override
   void initState() {
     super.initState();
-    if (widget.student != null) {
-      _firstNameController.text = widget.student!.firstName;
-      _lastNameController.text = widget.student!.lastName;
-      _selectedDepartment = widget.student!.department;
-      _selectedGender = widget.student!.gender;
-      _grade = widget.student!.grade;
+    if (widget.studentIndex != null) {
+      final student = ref.read(studentsProvider)![widget.studentIndex!];
+      firstNameController.text = student.firstName;
+      lastNameController.text = student.lastName;
+      grade = student.grade;
+      selectedGender = student.gender;
+      selectedDepartment = student.department;
     }
   }
 
-  void saveStudent() {
-    if (_firstNameController.text.isEmpty ||
-        _lastNameController.text.isEmpty ||
-        _selectedDepartment == null ||
-        _selectedGender == null) {
-      return;
+  @override
+  void dispose() {
+    firstNameController.dispose();
+    lastNameController.dispose();
+    super.dispose();
+  }
+
+  void saveStudent() async {
+    if (widget.studentIndex != null) {
+      await ref.read(studentsProvider.notifier).insertStudent(
+            widget.studentIndex!,
+            firstNameController.text.trim(),
+            lastNameController.text.trim(),
+            selectedDepartment,
+            selectedGender,
+            grade,
+          );
+    } else {
+      await ref.read(studentsProvider.notifier).addStudent(
+            firstNameController.text.trim(),
+            lastNameController.text.trim(),
+            selectedDepartment,
+            selectedGender,
+            grade,
+          );
     }
 
-    final newStudent = Student(
-      id: widget.student?.id ?? const Uuid().v4(),
-      firstName: _firstNameController.text.trim(),
-      lastName: _lastNameController.text.trim(),
-      department: _selectedDepartment!,
-      grade: _grade,
-      gender: _selectedGender!,
-    );
+    if (!context.mounted) return;
 
-    widget.onSave(newStudent);
-    Navigator.of(context).pop();
+    Navigator.of(context).pop(null);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    final notifier = ref.watch(studentsProvider.notifier);
+    Widget newStudentScreen = Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: SingleChildScrollView(
         child: Container(
@@ -82,7 +99,7 @@ class _NewStudentState extends State<NewStudent> {
               ),
               const SizedBox(height: 16),
               TextField(
-                controller: _firstNameController,
+                controller: firstNameController,
                 decoration: const InputDecoration(
                   labelText: 'Ім’я',
                   border: OutlineInputBorder(),
@@ -91,7 +108,7 @@ class _NewStudentState extends State<NewStudent> {
               ),
               const SizedBox(height: 16),
               TextField(
-                controller: _lastNameController,
+                controller: lastNameController,
                 decoration: const InputDecoration(
                   labelText: 'Прізвище',
                   border: OutlineInputBorder(),
@@ -100,7 +117,7 @@ class _NewStudentState extends State<NewStudent> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<Department>(
-                value: _selectedDepartment,
+                value: selectedDepartment,
                 decoration: const InputDecoration(
                   labelText: 'Факультет',
                   border: OutlineInputBorder(),
@@ -119,13 +136,13 @@ class _NewStudentState extends State<NewStudent> {
                 }).toList(),
                 onChanged: (value) {
                   setState(() {
-                    _selectedDepartment = value;
+                    selectedDepartment = value;
                   });
                 },
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<Gender>(
-                value: _selectedGender,
+                value: selectedGender,
                 decoration: const InputDecoration(
                   labelText: 'Стать',
                   border: OutlineInputBorder(),
@@ -141,21 +158,21 @@ class _NewStudentState extends State<NewStudent> {
                 }).toList(),
                 onChanged: (value) {
                   setState(() {
-                    _selectedGender = value;
+                    selectedGender = value;
                   });
                 },
               ),
               const SizedBox(height: 16),
               Slider(
-                value: _grade.toDouble(),
+                value: grade.toDouble(),
                 min: 0,
                 max: 100,
                 divisions: 100,
-                label: 'Оцінка: $_grade',
+                label: 'Оцінка: $grade',
                 activeColor: Colors.teal,
                 onChanged: (value) {
                   setState(() {
-                    _grade = value.toInt();
+                    grade = value.toInt();
                   });
                 },
               ),
@@ -206,5 +223,11 @@ class _NewStudentState extends State<NewStudent> {
         ),
       ),
     );
+    if(notifier.isLoading) {
+      newStudentScreen = const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+    return newStudentScreen;
   }
 }

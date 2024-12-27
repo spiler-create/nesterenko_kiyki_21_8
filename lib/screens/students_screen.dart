@@ -10,6 +10,7 @@ class StudentsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final students = ref.watch(studentsProvider);
+    final notifier = ref.watch(studentsProvider.notifier);
 
     return Scaffold(
       
@@ -24,7 +25,11 @@ class StudentsScreen extends ConsumerWidget {
               ),
             ),
           ),
-          if (students.isEmpty)
+          if(notifier.isLoading) 
+            const Center(
+              child: CircularProgressIndicator(),
+            )
+          else if (students == null)
             const Center(
               child: Text(
                 'Список порожній',
@@ -39,7 +44,7 @@ class StudentsScreen extends ConsumerWidget {
             ListView.builder(
               padding: const EdgeInsets.only(
                 top: 20,
-                bottom: 100, // For button space
+                bottom: 100, 
               ),
               itemCount: students.length,
               itemBuilder: (context, index) {
@@ -71,7 +76,11 @@ class StudentsScreen extends ConsumerWidget {
                           },
                         ),
                       ),
-                    );
+                    ).closed.then((value) {
+                        if (value != SnackBarClosedReason.action) {
+                          ref.read(studentsProvider.notifier).permanentlyRemove();
+                        }
+                      });
                   },
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -82,12 +91,7 @@ class StudentsScreen extends ConsumerWidget {
                           context: context,
                           isScrollControlled: true,
                           builder: (_) => NewStudent(
-                            student: student,
-                            onSave: (updatedStudent) {
-                              ref
-                                  .read(studentsProvider.notifier)
-                                  .insertStudent(index, updatedStudent);
-                            },
+                            studentIndex: index
                           ),
                         );
                       },
@@ -105,12 +109,7 @@ class StudentsScreen extends ConsumerWidget {
                   showModalBottomSheet(
                     context: context,
                     isScrollControlled: true,
-                    builder: (_) => NewStudent(
-                      onSave: (newStudent) {
-                        ref.read(studentsProvider.notifier).addStudent(newStudent);
-                      },
-                    ),
-                  );
+                    builder: (_) => NewStudent());
                 },
                 icon: const Icon(
                   Icons.add,

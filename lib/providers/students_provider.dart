@@ -1,41 +1,127 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/student.dart';
 
-class StudentsNotifier extends StateNotifier<List<Student>> {
-  StudentsNotifier() : super([]);
+class StudentsState {
+  final List<Student> students;
+  final bool isLoading;
 
-  Student? _lastRemovedStudent;
-  int? _lastRemovedIndex;
+  StudentsState({required this.students, required this.isLoading});
 
-  void addStudent(Student student) {
-    state = [...state, student];
-  }
-
-  void insertStudent(int index, Student updatedStudent) {
-    final updatedList = [...state];
-    updatedList[index] = updatedStudent;
-    state = updatedList;
-  }
-
-  void removeStudent(int index) {
-    _lastRemovedStudent = state[index];
-    _lastRemovedIndex = index;
-    state = [...state..removeAt(index)];
-  }
-
-  void undoStudent() {
-    if (_lastRemovedStudent != null && _lastRemovedIndex != null) {
-      final updatedList = [...state];
-      updatedList.insert(_lastRemovedIndex!, _lastRemovedStudent!);
-      state = updatedList;
-
-      _lastRemovedStudent = null;
-      _lastRemovedIndex = null;
-    }
+  StudentsState copyWith({List<Student>? students, bool? isLoading}) {
+    return StudentsState(
+      students: students ?? this.students,
+      isLoading: isLoading ?? this.isLoading,
+    );
   }
 }
 
 final studentsProvider =
-    StateNotifierProvider<StudentsNotifier, List<Student>>((ref) {
-  return StudentsNotifier();
+    StateNotifierProvider<StudentsNotifier, List<Student>?>((ref) {
+
+  final notifier = StudentsNotifier();
+  notifier.loadStudents();
+  return notifier;
 });
+
+class StudentsNotifier extends StateNotifier<List<Student>> {
+  StudentsNotifier() : super([]);
+
+  bool isLoading = false;
+  Student? _removedStudent;
+  int? _removedIndex;
+  String? _errorMessage;
+  String? get errorMessage => _errorMessage;
+
+  void clearError() {
+    _errorMessage = null;
+  }
+
+  Future<void> loadStudents() async {
+    isLoading = true;
+    state = [];
+    try {
+      state = await Student.remoteGetList();
+    } catch (e) {
+      _errorMessage = e.toString();
+    } finally {
+      isLoading = false;
+    }
+  }
+
+  Future<void> addStudent(
+    String firstName,
+    String lastName,
+    department,
+    gender,
+    int grade,
+  ) async {
+    isLoading = true;
+    try {
+      final student = await Student.remoteCreate(
+          firstName, lastName, department, gender, grade);
+      state = [...state, student];
+    } catch (e) {
+      _errorMessage = e.toString();
+    } finally {
+      isLoading = false;
+    }
+  }
+
+  Future<void> insertStudent(
+    int index,
+    String firstName,
+    String lastName,
+    department,
+    gender,
+    int grade,
+  ) async {
+    isLoading = true;
+    try {
+      final student = await Student.remoteUpdate(
+        state[index].id,
+        firstName,
+        lastName,
+        department,
+        gender,
+        grade,
+      );
+      final updatedList = [...state];
+      updatedList[index] = student;
+      state = updatedList;
+    } catch (e) {
+      _errorMessage = e.toString();
+    } finally {
+      isLoading = false;
+    }
+  }
+
+  void removeStudent(int index) {
+    _removedStudent = state[index];
+    _removedIndex = index;
+    state = [...state.sublist(0, index), ...state.sublist(index + 1)];
+  }
+
+  void undoStudent() {
+    if (_removedStudent != null && _removedIndex != null) {
+      final updatedList = [...state];
+      updatedList.insert(_removedIndex!, _removedStudent!);
+      state = updatedList;
+    }
+  }
+
+  Future<void> permanentlyRemove() async {
+    isLoading = true;
+    try {
+      if(_removedStudent != null) {
+          await Student.remoteDelete(_removedStudent!.id);
+          _removedStudent = null;
+          _removedIndex = null;
+      }      
+    } catch (e) {
+      _errorMessage = e.toString();
+    } finally {
+      isLoading = false;
+    }
+  }
+
+} 
